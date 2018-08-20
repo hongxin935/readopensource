@@ -37,7 +37,7 @@ uint32 get_checksum1(char *buf,int len)
     return (s1 & 0xffff) + (s2 << 16);
 }
 
-
+// 使用md4计算checksum
 void get_checksum2(char *buf,int len,char *sum)
 {
   char buf2[64];

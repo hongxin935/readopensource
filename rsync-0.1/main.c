@@ -75,12 +75,15 @@ static void report(int f)
 
 int do_cmd(char *cmd,char *machine,char *user,char *path,int *f_in,int *f_out)
 {
+	// cmd= machine=xintest2 user=root path=/root/test1/xintest1_file_on_xintest2
   char *args[100];
   int i,x,argc=0;
   char *tok,*p;
   char argstr[30]="-s";
   char bsize[30];
 
+  // 调用rsh,环境需安装rsh
+  // cmd : rsh
   if (!cmd)
     cmd = getenv(RSYNC_RSH_ENV);
   if (!cmd)
@@ -89,18 +92,30 @@ int do_cmd(char *cmd,char *machine,char *user,char *path,int *f_in,int *f_out)
   if (!cmd) 
     goto oom;
 
+  // 如果有-e来指定执行rsh命令
+  // rsync -e "/usr/bin/rsh -d" xintest1_file  root@xintest2:/root/test1/xintest1_file_on_xintest2
+  // cmd : /usr/bin/rsh -d
   for (tok=strtok(cmd," ");tok;tok=strtok(NULL," ")) {
     args[argc++] = tok;
   }
 
+  // 添加 -l
+  // cmd : rsh -l root
   if (user) {
     args[argc++] = "-l";
     args[argc++] = user;
   }
+  // 添加 目标机器
+  // cmd : rsh -l root xintest2 
   args[argc++] = machine;
 
+  // 添加 rsh 要执行的命令
+  // cmd : rsh -l root xintest2 rsync
   args[argc++] = RSYNC_NAME;
 
+  // 把所有参数全部连起来
+  // 拼接rsync 的详细命令, argstr 一定带-s
+  // cmd : rsh -l root xintest2 rsync -slogDtpr 
   x = 2;
   for (i=0;i<verbose;i++)
     argstr[x++] = 'v';
@@ -135,6 +150,8 @@ int do_cmd(char *cmd,char *machine,char *user,char *path,int *f_in,int *f_out)
     args[argc++] = bsize;
   }    
   
+  // 从最右侧起找/定位文件的目录
+  // cmd : rsh -l root xintest2 rsync -slogDtpr /root/test1 /root/test1/xintest1_file_on_xintest2
   if (path && *path) {
     char *dir = strdup(path);
     p = strrchr(dir,'/');
@@ -206,6 +223,13 @@ void do_server_sender(int argc,char *argv[])
 
 void do_server_recv(int argc,char *argv[])
 {
+    // debug
+	int k = 0;
+	for(k = 0; k < argc; k++)
+	{
+		fprintf(stderr,"argc %d dir %d %s \n",argc,k,argv[k]);
+	}
+
   int pid,i,status;
   char *dir = NULL;
   struct file_list *flist;
@@ -219,11 +243,13 @@ void do_server_recv(int argc,char *argv[])
     dir = argv[0];
     argc--;
     argv++;
+    fprintf(stderr,"argc %d dir (%s) \n",argc,dir);
   }
 
   if (argc > 0) {
     fname = argv[0];
     dir = NULL;
+    fprintf(stderr,"argc %d fname (%s) \n",argc,fname);
 
     if (stat(fname,&st) != 0) {
       if (!recurse || mkdir(fname,0777) != 0) {
@@ -257,6 +283,7 @@ void do_server_recv(int argc,char *argv[])
   }
 
   if ((pid=fork()) == 0) {
+	  // 父进程
     if (verbose > 2)
       fprintf(stderr,"generator starting pid=%d count=%d\n",
 	      (int)getpid(),flist->count);
@@ -438,6 +465,15 @@ int main(int argc,char *argv[])
       argv++;
     }
 
+    // rsync  ~/test1/xintest1_file  root@xintest2:/root/test1/xintest1_file_on_xintest2
+    // cmd=rsh -l root xintest2 rsync -s /root/test1 /root/test1/xintest1_file_on_xintest2
+    // xintest2 do_server_recv 
+
+    // rsync  root@xintest2:/root/test1/xintest2_file  /root/test1/xintest2_file_on_xintest1
+    // cmd=rsh -l root xintest2 rsync -sS /root/test1 /root/test1/xintest2_file
+    // xintest2 do_server_sender
+
+    // -s 对端只会走入这个分支执行后退出
     if (server) {
       int version = read_int(STDIN_FILENO);
       if (version != PROTOCOL_VERSION) {
@@ -463,6 +499,7 @@ int main(int argc,char *argv[])
     p = strchr(argv[0],':');
 
     if (p) {
+		// user@host:src dest
       sender = 0;
       *p = 0;
       shell_machine = argv[0];
@@ -470,6 +507,7 @@ int main(int argc,char *argv[])
       argc--;
       argv++;
     } else {
+		// src user@host: dest
       sender = 1;
 
       p = strchr(argv[argc-1],':');
@@ -506,6 +544,7 @@ int main(int argc,char *argv[])
       exit(1);
     }
 
+	// 调用rsh
     pid = do_cmd(shell_cmd,shell_machine,shell_user,shell_path,&f_in,&f_out);
 
     write_int(f_out,PROTOCOL_VERSION);

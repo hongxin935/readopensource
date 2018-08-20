@@ -104,6 +104,8 @@ static struct sum_struct *generate_sums(char *buf,off_t len,int n)
   if (!s->sums) out_of_memory("generate_sums");
   
   for (i=0;i<count;i++) {
+	  // 考虑 len < n
+	  // 不足 n 即一个数据快的情况下有
     int n1 = MIN(len,n);
 
     s->sums[i].sum1 = get_checksum1(buf,n1);
@@ -305,6 +307,7 @@ void recv_generator(char *fname,struct file_list *flist,int i,int f_out)
     file_checksum(fname,sum,st.st_size);
   }
 
+  // 接收端对比是否有修改
   if ((st.st_size == flist->files[i].length &&
        ((!preserve_perms || st.st_mtime == flist->files[i].modtime) ||
 	(S_ISREG(st.st_mode) && 

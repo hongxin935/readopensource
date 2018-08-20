@@ -53,6 +53,7 @@ static void send_directory(int f,struct file_list *flist,char *dir);
 
 static char *flist_dir = NULL;
 
+// 将 file_struct 写入给到对端
 static void send_file_entry(struct file_struct *file,int f)
 {
   write_int(f,strlen(file->name));
@@ -83,6 +84,7 @@ static void send_file_entry(struct file_struct *file,int f)
 }
 
 
+// 将文件属性都存放到 file_struct
 static struct file_struct *make_file(int recurse,char *fname)
 {
   static struct file_struct file;
@@ -154,10 +156,12 @@ static void send_file_name(int f,struct file_list *flist,
 {
   struct file_struct *file;
 
+  // 创建 file_struct
   file = make_file(recurse,fname);
 
   if (!file) return;
   
+  // 预先分配的内存不够，再多分配点
   if (flist->count >= flist_malloced) {
     flist_malloced += 100;
     flist->files = (struct file_struct *)realloc(flist->files,
@@ -169,8 +173,11 @@ static void send_file_name(int f,struct file_list *flist,
 
   flist->files[flist->count++] = *file;    
 
+  
+  // file->dir 没有从这里写到 f
   send_file_entry(file,f);
 
+  // dir 是这里处理
   if (S_ISDIR(file->mode) && recurse) {      
     send_directory(f,flist,file->name);
     return;
@@ -200,6 +207,7 @@ static void send_directory(int f,struct file_list *flist,char *dir)
     strcat(fname,"/");
   p = fname + strlen(fname);
   
+  // 遍历目录所有文件
   for (di=readdir(d); di; di=readdir(d)) {
     if (strcmp(di->d_name,".")==0 ||
 	strcmp(di->d_name,"..")==0)
@@ -230,6 +238,8 @@ struct file_list *send_file_list(int f,int recurse,int argc,char *argv[])
 					      flist_malloced);
   if (!flist->files) out_of_memory("send_file_list");
 
+  // argc 1
+  // argv /root/test1/xintest1_file
   for (i=0;i<argc;i++) {
     char *fname = argv[i];
 
@@ -242,11 +252,13 @@ struct file_list *send_file_list(int f,int recurse,int argc,char *argv[])
       continue;
     }
 
+    // 目录且没有递归
     if (S_ISDIR(st.st_mode) && !recurse) {
       fprintf(stderr,"skipping directory %s\n",fname);
       continue;
     }
 
+    // 目录且递归，argc = 1
     if (S_ISDIR(st.st_mode) && argc == 1) {
       if (chdir(fname) != 0) {
 	fprintf(stderr,"chdir %s : %s\n",fname,strerror(errno));
@@ -256,9 +268,12 @@ struct file_list *send_file_list(int f,int recurse,int argc,char *argv[])
       continue;
     } 
 
+    // argv /root/test1/xintest1_file
+    // 没有目录时 argv xintest1_file
     dir = NULL;
     p = strrchr(fname,'/');
     if (p && !p[1]) {
+    // 以/结尾的，需要再往左找/
       *p = 0;
       p = strrchr(fname,'/');
     }
@@ -269,10 +284,12 @@ struct file_list *send_file_list(int f,int recurse,int argc,char *argv[])
     }
 
     if (dir && *dir) {
+        // 获得工作目录
       if (getcwd(dbuf,MAXPATHLEN-1) == NULL) {
 	fprintf(stderr,"getwd : %s\n",strerror(errno));
 	exit(1);
       }
+        // 更换工作目录
       if (chdir(dir) != 0) {
 	fprintf(stderr,"chdir %s : %s\n",dir,strerror(errno));
 	continue;
@@ -280,6 +297,7 @@ struct file_list *send_file_list(int f,int recurse,int argc,char *argv[])
       flist_dir = dir;
       send_file_name(f,flist,recurse,fname);
       flist_dir = NULL;
+        // 恢复原来的工作目录
       if (chdir(dbuf) != 0) {
 	fprintf(stderr,"chdir %s : %s\n",dbuf,strerror(errno));
 	exit(1);

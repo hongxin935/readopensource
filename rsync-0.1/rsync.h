@@ -144,18 +144,18 @@ struct file_list {
 };
 
 struct sum_buf {
-  off_t offset;			/* offset in file of this chunk */
-  int len;			/* length of chunk of file */
-  int i;			/* index of this chunk */
-  uint32 sum1;	                /* simple checksum */
+  off_t offset;			/* offset in file of this chunk */  // 数据块偏移
+  int len;			/* length of chunk of file */ // 数据块大小
+  int i;			/* index of this chunk */ // 第i个数据块
+  uint32 sum1;	                /* simple checksum */ 
   char sum2[SUM_LENGTH];	/* md4 checksum  */
 };
 
 struct sum_struct {
-  off_t flength;		/* total file length */
-  int count;			/* how many chunks */
-  int remainder;		/* flength % block_length */
-  int n;			/* block_length */
+  off_t flength;		/* total file length */ // buf总字节数
+  int count;			/* how many chunks */ // 有多少个n字节块
+  int remainder;		/* flength % block_length */ // 不足n字节的那个数据块有多少字节
+  int n;			/* block_length */ // 按多少字节分数据块
   struct sum_buf *sums;		/* points to info for each chunk */
 };
 

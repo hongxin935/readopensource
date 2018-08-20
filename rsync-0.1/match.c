@@ -96,6 +96,7 @@ static void matched(int f,struct sum_struct *s,char *buf,off_t len,int offset,in
 
 static void hash_search(int f,struct sum_struct *s,char *buf,off_t len)
 {
+    // 对比本地文件 buf 和 对端传递过来的 checksums
   int offset,j,k;
   int end;
   char sum2[SUM_LENGTH];
@@ -119,6 +120,8 @@ static void hash_search(int f,struct sum_struct *s,char *buf,off_t len)
     fprintf(stderr,"hash search s->n=%d len=%d count=%d\n",
 	    s->n,(int)len,s->count);
 
+  // 对于本地的buf，每次移动一个bytes，对比当前chunk是否在对端的checksums之中，
+  // 在对端的checksums中，说明对端该数据块没有发生变化，此时发送直到找到match时的所有不match的数据过去
   do {
     tag t = (s1 + s2) & 0xffff;		/* gettag(sum) */
     j = tag_table[t];
@@ -161,6 +164,13 @@ static void hash_search(int f,struct sum_struct *s,char *buf,off_t len)
     }
 
     /* Trim off the first byte from the checksum */
+      // get_checksum1 中
+      // s1 += buf[i];
+      // s2 += s1;
+      // 1
+      // 1 2 3
+      // 1 2 3 4
+      // 第一个byte在s2中将会是k次
     s1 -= buf[offset];
     s2 -= k * buf[offset];
 
@@ -178,12 +188,14 @@ static void hash_search(int f,struct sum_struct *s,char *buf,off_t len)
 	      k, (int)offset, buf[offset], buf[offset+k]);
   } while (++offset < end);
 
+  // 最后有剩余部分的话，就发送过去
   matched(f,s,buf,len,len,-1);
 }
 
 
 void match_sums(int f,struct sum_struct *s,char *buf,off_t len)
 {
+    // 对比本地文件 buf 和 对端传递过来的 checksums
   last_match = 0;
   false_alarms = 0;
   tag_hits = 0;
@@ -199,6 +211,9 @@ void match_sums(int f,struct sum_struct *s,char *buf,off_t len)
     if (verbose > 2) 
       fprintf(stderr,"done hash search\n");
   } else {
+      // 任意一边文件为空
+      // 发送端为空 len = 0 
+      // 对端为空
     matched(f,s,buf,len,len,-1);
   }
 

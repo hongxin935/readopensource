@@ -118,6 +118,13 @@ void unmap_file(char *buf,off_t len)
 
 
 /* this is taken from CVS */
+// 子进程写到stdout的东西，给父进程读，成为父进程的f_in
+// 父进程写的东西，作为子进程的stdin，是父进程的f_out
+//                     父进程              子进程
+// to_child_pipe     0 close 1 ok  <- 	0 ok 1 close   0 = stdin
+// from_child_pipe   0 ok 1 close  ->   0 close 1 ok   1 = stdout
+// *f_in = from_child_pipe[0];
+// *f_out = to_child_pipe[1];
 int piped_child(char **command,int *f_in,int *f_out)
 {
   int pid;
@@ -146,6 +153,7 @@ int piped_child(char **command,int *f_in,int *f_out)
 	fprintf(stderr,"Failed to dup/close : %s\n",strerror(errno));
 	exit(1);
       }
+      // 在子进程中执行 rsync 命令
       execvp(command[0], command);
       fprintf(stderr,"Failed to exec %s : %s\n",
 	      command[0],strerror(errno));
