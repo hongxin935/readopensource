@@ -1,0 +1,83 @@
+This is a preliminary release of rsync. 
+
+>>> THIS DOCUMENTATION IS INCOMPLETE <<<
+
+rsync is a package that provides a very fast method for bringing
+remote files into sync. It does this by sending just the differences
+in the files across the link, without requiring that both sets of
+files are present at one of the ends of the link beforehand.
+
+At first glance this may seem impossible because the calculation of
+diffs between two files normally requires local access to both
+files. 
+
+ALGORITHM
+---------
+
+Rsync works in the following way:
+
+1. The "sender" builds a list of files along with their attributes and
+sends them to the "receiver".
+
+2. The receiver builds and sends a set of checksums for fixed sized
+blocks in each of the files. For each block two checkums are
+calculated, one is a weak 32-bit "rolling" checksum and the other is a
+strong 128-bit MD4 checksum.
+
+3. The sender searches for matches between the weak checksums and the
+local files. Every offset in the file is checked against every
+checksum sent by the receiver for that file. This can be done
+extremely quickly using a multi-alternate searching scheme, along with
+a special property of the rolling checksum. 
+
+The special property is that it is very cheap to derive the checksum
+for a buffer b[2 .. N+1] from the checksum for buffer b[1 .. N]. This
+allows the checksum to be calculated for every file offset very
+quickly.
+
+4. The sender sends instructions to the receiver for reconstructing
+the file in pieces. Each piece is either a block of the existing file
+at the receivers end or a block of data.
+
+5. The whole process is pipelined, so that the number of round-trips
+is minimised. The receiver forks into two processes, one of which
+generates the checksums, and the other reconstructs the files.
+
+
+USAGE
+-----
+
+You use rsync just like rcp. rsync has many more options than rcp, but
+uses the same basic syntax.
+
+Use "rsync -h" for some info on extra options in rsync
+
+Many of the options in rsync were inspired by similar options in the
+GNU cp program. It can handle device files, links, attributes, "update
+only", recursion etc etc. A man page will be written sometime :-)
+
+
+SETUP
+-----
+
+Rsync uses rsh or ssh for communication. It does not need to be setuid
+and requires no special privilages for installation. It does not
+require a inetd entry or a daemon. You must, however, have a working
+rsh or ssh system. Using ssh is recommended for its security and
+compression features.
+
+To install rsync, first run the "configure" script. This will create a
+Makefile and config.h appropriate for your system. Then type
+"make". Once built put a copy of rsync in your search path on the
+local and remote systems. That's it!
+
+
+COPYRIGHT
+---------
+
+Rsync was written by Andrew Tridgell and Paul Mackerras, and is
+available under the GPL.
+
+Andrew.Tridgell@anu.edu.au
+paulus@cs.anu.edu.au
+

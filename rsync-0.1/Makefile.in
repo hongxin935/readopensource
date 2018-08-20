@@ -1,0 +1,44 @@
+# Makefile for rsync. This is processed by configure to produce the final
+# Makefile
+
+INSTALL_BIN=@prefix@/bin
+INSTALL_MAN=@prefix@/man
+
+CCOPTFLAGS =      -O 
+
+LIBS=@LIBS@
+CC=@CC@ $(CCOPTFLAGS)
+
+INSTALLCMD=@INSTALL@
+
+
+SRC=@srcdir@
+SHELL=/bin/sh
+
+
+.SUFFIXES:
+.SUFFIXES: .c .o
+
+OBJS=rsync.o util.o md4.o main.o checksum.o match.o flist.o
+
+all: rsync
+
+install: all
+	${INSTALLCMD} -s -o root -m 755 rsync ${INSTALL_BIN}
+
+rsync: $(OBJS)
+	$(CC) $(CFLAGS) -o rsync $(OBJS) $(LIBS)
+
+proto:
+	cat *.c | awk -f mkproto.awk > proto.h
+
+clean:
+	rm -f *~ *.o rsync config.cache config.log config.status
+
+dist: 
+	tar --exclude-from .ignore -czf dist.tar.gz .
+	-mkdir rsync-$(VERSION)
+	(cd rsync-$(VERSION) ; tar xzf ../dist.tar.gz)
+	tar -czf rsync-$(VERSION).tar.gz rsync-$(VERSION)
+	rm -f dist.tar.gz
+	echo rsync-$(VERSION) >> .cvsignore

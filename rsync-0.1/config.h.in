@@ -1,0 +1,85 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* compiler specifics */
+#undef const
+#undef inline
+#undef HAVE_INLINE
+
+/* defines for basic types */
+#undef gid_t
+#undef mode_t
+#undef off_t
+#undef pid_t
+#undef size_t
+#undef uid_t
+
+/* The number of bytes in some types  */
+#undef SIZEOF_LONG
+#undef SIZEOF_INT
+#undef SIZEOF_SHORT
+
+/* defines for header files */
+#undef HAVE_SYS_WAIT_H
+#undef HAVE_FCNTL_H
+#undef HAVE_SYS_FCNTL_H
+#undef HAVE_SYS_PARAM_H
+#undef TIME_WITH_SYS_TIME
+#undef HAVE_DIRENT_H
+#undef HAVE_MALLOC_H
+#undef HAVE_SYS_DIR_H
+#undef HAVE_SYS_TIME_H
+#undef HAVE_SYS_TIMES_H
+#undef HAVE_UNISTD_H
+#undef HAVE_GRP_H
+#undef HAVE_CTYPE_H
+#undef HAVE_UTIME_H
+
+/* specific functions */
+#undef HAVE_FCHMOD
+#undef HAVE_CHMOD
+#undef HAVE_MKNOD
+#undef HAVE_FSTAT
+#undef HAVE_STRCHR
+#undef HAVE_STRDUP
+#undef HAVE_STRERROR
+#undef HAVE_STRTOK
+#undef HAVE_WAITPID
+#undef HAVE_BCOPY
+#undef HAVE_BZERO
+#undef HAVE_READLINK
+#undef HAVE_UTIME
+
+/* needed for mknod */
+#undef HAVE_ST_RDEV
+
+/* Define if the system does not provide POSIX.1 features except
+   with this defined.  */
+#undef _POSIX_1_SOURCE
+
+/* Define if you need to in order for stat and other things to work.  */
+#undef _POSIX_SOURCE
+
+/* Define as the return type of signal handlers (int or void).  */
+#undef RETSIGTYPE
+
+/* Define if you have the ANSI C header files.  */
+#undef STDC_HEADERS
+
+/* Define if you can safely include both <sys/time.h> and <time.h>.  */
+
+/* HP/UX source */
+#undef _HPUX_SOURCE
+
+/* Use the "union wait" union to get process status from wait3/waitpid */
+#undef HAVE_UNION_WAIT
+
+/* Define if <errno.h> contains a declaration for extern int errno */
+#undef HAVE_ERRNO_DECL
+
+/* Define if on AIX 3.
+   System headers sometimes define this.
+   We just want to avoid a redefinition error message.  */
+#ifndef _ALL_SOURCE
+#undef _ALL_SOURCE
+#endif
+
