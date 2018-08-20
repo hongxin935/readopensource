@@ -72,16 +72,17 @@ static void send_sums(struct sum_struct *s,int f_out)
 
   generate approximately one checksum every n bytes
   */
+// 对buffer 的每n个字节生产checksum
 static struct sum_struct *generate_sums(char *buf,off_t len,int n)
 {
   int i;
   struct sum_struct *s;
   int count;
   int block_len = n;
-  int remainder = (len%block_len);
+  int remainder = (len%block_len); // 不足n的那部分有多少字节
   off_t offset = 0;
 
-  count = (len+(block_len-1))/block_len;
+  count = (len+(block_len-1))/block_len; // 有多少块 n 字节, 如果 len < n， 那就是1个数据块
 
   s = (struct sum_struct *)malloc(sizeof(*s));
   if (!s) out_of_memory("generate_sums");
@@ -367,6 +368,8 @@ static void receive_data(int f_in,char *buf,int fd)
 
   for (i=read_int(f_in); i != 0; i=read_int(f_in)) {
     if (i > 0) {
+		// 有数据块发送过来
+		// 有差异数据块才会触发
       if (i > size) {
 	if (buf2) free(buf2);
 	buf2 = (char *)malloc(i);
@@ -381,6 +384,8 @@ static void receive_data(int f_in,char *buf,int fd)
       write(fd,buf2,i);
       offset += i;
     } else {
+		// 当前相同的数据块，就不用发buf过来，
+		// 从本地文件buf 拿
       i = -(i+1);
       offset2 = i*n;
       len = n;

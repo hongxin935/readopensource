@@ -56,13 +56,23 @@ static void build_hash_table(struct sum_struct *s)
   for (i=0;i<s->count;i++) {
     targets[i].i = i;
     targets[i].t = gettag(s->sums[i].sum1);
+    fprintf(stderr, " %d -> %u -> %d\n", i, targets[i].t, targets[i].i);
   }
 
+  // 从大到小排序
   qsort(targets,s->count,sizeof(targets[0]),(int (*)())compare_targets);
 
+  for (i=0;i<s->count;i++) {
+    fprintf(stderr, " %d -> %u -> %d\n", i, targets[i].t, targets[i].i);
+  }
   for (i=0;i<TABLESIZE;i++)
     tag_table[i] = NULL_TAG;
 
+  // vector< pair< tag, i > > targets
+  // tag_table 类似bitmap， 第 x 个，存tag 为x 的下标i
+  // 此函数如果用复杂一点的数据结构，就是 map<tag, pair<tag, i> > , 更简洁就是 map<tag, i>
+  // 如果存在相同的 targets[i].t 那么这里记录下来的是最小的 i 
+  // 所以后面在查的时候，命中了，还得从i开始循环遍历整个 targets 才能把所有可能的 targets[i].t 找到
   for (i=s->count-1;i>=0;i--) {    
     tag_table[targets[i].t] = i;
   }
@@ -73,6 +83,8 @@ static void build_hash_table(struct sum_struct *s)
 static off_t last_match;
 
 
+// 直到找到一个match
+// 把上一次match的位置 到这一次match的位置中间的所有buf发过去（也就是不match的部分发过去）
 static void matched(int f,struct sum_struct *s,char *buf,off_t len,int offset,int i)
 {
   int n = offset - last_match;
@@ -86,7 +98,7 @@ static void matched(int f,struct sum_struct *s,char *buf,off_t len,int offset,in
     write_int(f,n);
     write_buf(f,buf+last_match,n);
   }
-  write_int(f,-(i+1));
+  write_int(f,-(i+1)); // 可能是0(有一方为空，剩余数据发送)， -1 第一块数据就相同, -2 依次类推
   if (i != -1)
     last_match = offset + s->sums[i].len;
   if (n > 0)
